@@ -325,7 +325,13 @@ function IntakeForm() {
                       type="radio"
                       name="btwPlichtig"
                       checked={form.btwPlichtig === v}
-                      onChange={() => update("btwPlichtig", v)}
+                      onChange={() =>
+                        setForm((f) => ({
+                          ...f,
+                          btwPlichtig: v,
+                          ...(v === "nee" ? { btwRecuperatie: "" as const, btwPercentage: "" } : {}),
+                        }))
+                      }
                       className="h-4 w-4 accent-[color:var(--brand)]"
                     />
                     <span className="capitalize">{v}</span>
