@@ -349,7 +349,7 @@ function IntakeForm() {
                 <option value="">Kies…</option>
                 <option value="volledig">Volledig</option>
                 <option value="gedeeltelijk">Gedeeltelijk</option>
-                <option value="niet">Niet</option>
+                
               </select>
               {form.btwPlichtig === "nee" && (
                 <p className="mt-1 text-xs text-muted-foreground">
