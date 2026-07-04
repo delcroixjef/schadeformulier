@@ -536,8 +536,8 @@ const SignaturePad = forwardRef<SignaturePadHandle>((_props, ref) => {
         </div>
       </div>
     );
-  });
-})();
+});
+SignaturePad.displayName = "SignaturePad";
 
 /* ---------------- Debug panel ---------------- */
 
