@@ -143,13 +143,17 @@ function IntakeForm() {
       email: form.email.trim(),
       telefoon: form.telefoon.trim(),
       typeSchade: form.typeSchade,
+      typeSchadeAndere:
+        form.typeSchade === "andere" ? form.typeSchadeAndere.trim() : null,
       datumSchade: toDDMMYYYY(form.datumSchade),
       btwPlichtig: form.btwPlichtig,
-      btwRecuperatie: form.btwRecuperatie,
+      btwRecuperatie: form.btwPlichtig === "ja" ? form.btwRecuperatie : null,
       btwPercentage:
-        form.btwRecuperatie === "gedeeltelijk" ? Number(form.btwPercentage) : null,
-      iban: form.iban.trim(),
-      betaalwijze: form.betaalwijze.trim(),
+        form.btwPlichtig === "ja" && form.btwRecuperatie === "gedeeltelijk"
+          ? Number(form.btwPercentage)
+          : null,
+      iban: form.iban.replace(/\s+/g, "").toUpperCase(),
+      betaalwijze: form.betaalwijze,
       bestuurderNaam: form.typeSchade === "auto" ? form.bestuurderNaam.trim() : null,
       bestuurderGeboortedatum:
         form.typeSchade === "auto" ? toDDMMYYYY(form.bestuurderGeboortedatum) : null,
