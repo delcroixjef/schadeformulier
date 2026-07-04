@@ -374,13 +374,18 @@ function IntakeForm() {
               />
             </Field>
             <Field label="Betaalwijze" error={errors.betaalwijze}>
-              <input
-                type="text"
+              <select
                 value={form.betaalwijze}
                 onChange={(e) => update("betaalwijze", e.target.value)}
-                placeholder="bv. overschrijving"
                 className={inputCls}
-              />
+              >
+                <option value="">Kies…</option>
+                {BETAALWIJZE_OPTIES.map((opt) => (
+                  <option key={opt} value={opt}>
+                    {opt}
+                  </option>
+                ))}
+              </select>
             </Field>
           </Section>
 
