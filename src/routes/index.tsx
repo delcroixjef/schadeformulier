@@ -6,7 +6,7 @@ export const Route = createFileRoute("/")({
 });
 
 type TypeSchade = "auto" | "brand" | "woning" | "andere" | "";
-type BtwRecup = "volledig" | "gedeeltelijk" | "";
+type BtwRecup = "volledig" | "gedeeltelijk" | "niet" | "";
 
 interface FormState {
   naam: string;
@@ -349,7 +349,7 @@ function IntakeForm() {
                 <option value="">Kies…</option>
                 <option value="volledig">Volledig</option>
                 <option value="gedeeltelijk">Gedeeltelijk</option>
-                
+                <option value="niet">Niet</option>
               </select>
               {form.btwPlichtig === "nee" && (
                 <p className="mt-1 text-xs text-muted-foreground">
