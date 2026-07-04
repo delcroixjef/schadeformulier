@@ -6,7 +6,7 @@ export const Route = createFileRoute("/")({
 });
 
 type TypeSchade = "auto" | "brand" | "woning" | "andere" | "";
-type BtwRecup = "volledig" | "gedeeltelijk" | "niet" | "";
+type BtwRecup = "volledig" | "gedeeltelijk" | "";
 
 interface FormState {
   naam: string;
