@@ -335,17 +335,23 @@ function IntakeForm() {
             </Field>
             <Field label="BTW recupereren" error={errors.btwRecuperatie}>
               <select
-                value={form.btwRecuperatie}
+                value={form.btwPlichtig === "ja" ? form.btwRecuperatie : ""}
                 onChange={(e) => update("btwRecuperatie", e.target.value as BtwRecup)}
-                className={inputCls}
+                disabled={form.btwPlichtig !== "ja"}
+                className={`${inputCls} disabled:cursor-not-allowed disabled:bg-secondary disabled:text-muted-foreground disabled:opacity-70`}
               >
                 <option value="">Kies…</option>
                 <option value="volledig">Volledig</option>
                 <option value="gedeeltelijk">Gedeeltelijk</option>
                 <option value="niet">Niet</option>
               </select>
+              {form.btwPlichtig === "nee" && (
+                <p className="mt-1 text-xs text-muted-foreground">
+                  Niet van toepassing (niet BTW-plichtig).
+                </p>
+              )}
             </Field>
-            {form.btwRecuperatie === "gedeeltelijk" && (
+            {form.btwPlichtig === "ja" && form.btwRecuperatie === "gedeeltelijk" && (
               <Field label="BTW-percentage" error={errors.btwPercentage}>
                 <input
                   type="number"
