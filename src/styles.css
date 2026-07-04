@@ -63,7 +63,12 @@
 
 :root {
   --radius: 0.625rem;
+  --font-sans: "DM Sans", ui-sans-serif, system-ui, sans-serif;
+  --brand: oklch(0.88 0.16 118);
+  --brand-foreground: oklch(0.28 0.02 60);
+  --structure: oklch(0.55 0.01 60);
   --background: oklch(1 0 0);
+  --foreground: oklch(0.28 0.02 60);
   --foreground: oklch(0.129 0.042 264.695);
   --card: oklch(1 0 0);
   --card-foreground: oklch(0.129 0.042 264.695);
