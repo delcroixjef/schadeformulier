@@ -13,6 +13,7 @@ interface FormState {
   email: string;
   telefoon: string;
   typeSchade: TypeSchade;
+  typeSchadeAndere: string;
   datumSchade: string; // yyyy-mm-dd from input
   btwPlichtig: "ja" | "nee" | "";
   btwRecuperatie: BtwRecup;
@@ -30,6 +31,7 @@ const initial: FormState = {
   email: "",
   telefoon: "",
   typeSchade: "",
+  typeSchadeAndere: "",
   datumSchade: "",
   btwPlichtig: "",
   btwRecuperatie: "",
@@ -41,6 +43,30 @@ const initial: FormState = {
   akkoordJuistheid: false,
   akkoordGdpr: false,
 };
+
+const BETAALWIJZE_OPTIES = [
+  "Op IBAN nr",
+  "Op IBAN WelZeker",
+  "Via erkend hersteller",
+  "Via naturaherstelling",
+] as const;
+
+// IBAN validation using mod-97 checksum
+function isValidIBAN(raw: string): boolean {
+  const iban = raw.replace(/\s+/g, "").toUpperCase();
+  if (!/^[A-Z]{2}\d{2}[A-Z0-9]{11,30}$/.test(iban)) return false;
+  const rearranged = iban.slice(4) + iban.slice(0, 4);
+  const converted = rearranged
+    .split("")
+    .map((c) => (/[A-Z]/.test(c) ? (c.charCodeAt(0) - 55).toString() : c))
+    .join("");
+  // mod-97 on long numeric string
+  let remainder = 0;
+  for (let i = 0; i < converted.length; i += 7) {
+    remainder = Number(String(remainder) + converted.substring(i, i + 7)) % 97;
+  }
+  return remainder === 1;
+}
 
 function toDDMMYYYY(iso: string): string {
   if (!iso) return "";
