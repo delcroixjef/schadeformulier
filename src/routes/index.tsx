@@ -442,11 +442,7 @@ interface SignaturePadHandle {
   toDataURL: () => string;
 }
 
-const SignaturePad = (() => {
-  const { forwardRef, useImperativeHandle, useEffect, useRef, useState } =
-    require("react") as typeof import("react");
-
-  return forwardRef<SignaturePadHandle>((_props, ref) => {
+const SignaturePad = forwardRef<SignaturePadHandle>((_props, ref) => {
     const canvasRef = useRef<HTMLCanvasElement>(null);
     const drawingRef = useRef(false);
     const emptyRef = useRef(true);
