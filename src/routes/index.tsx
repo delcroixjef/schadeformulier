@@ -274,6 +274,17 @@ function IntakeForm() {
                 <option value="andere">Andere</option>
               </select>
             </Field>
+            {form.typeSchade === "andere" && (
+              <Field label="Omschrijving schade" error={errors.typeSchadeAndere}>
+                <textarea
+                  value={form.typeSchadeAndere}
+                  onChange={(e) => update("typeSchadeAndere", e.target.value)}
+                  rows={3}
+                  placeholder="Beschrijf uw schade"
+                  className={inputCls}
+                />
+              </Field>
+            )}
             <Field label="Datum schade" error={errors.datumSchade}>
               <input
                 type="date"
