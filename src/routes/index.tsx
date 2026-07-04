@@ -103,16 +103,20 @@ function IntakeForm() {
       e.email = "Ongeldig e-mailadres";
     if (!form.telefoon.trim()) e.telefoon = "Verplicht";
     if (!form.typeSchade) e.typeSchade = "Verplicht";
+    if (form.typeSchade === "andere" && !form.typeSchadeAndere.trim())
+      e.typeSchadeAndere = "Verplicht — geef een omschrijving";
     if (!form.datumSchade) e.datumSchade = "Verplicht";
     if (!form.btwPlichtig) e.btwPlichtig = "Verplicht";
-    if (!form.btwRecuperatie) e.btwRecuperatie = "Verplicht";
-    if (form.btwRecuperatie === "gedeeltelijk") {
+    if (form.btwPlichtig === "ja" && !form.btwRecuperatie)
+      e.btwRecuperatie = "Verplicht";
+    if (form.btwPlichtig === "ja" && form.btwRecuperatie === "gedeeltelijk") {
       const n = Number(form.btwPercentage);
       if (!form.btwPercentage || Number.isNaN(n) || n < 0 || n > 100)
         e.btwPercentage = "Geef een percentage tussen 0 en 100";
     }
     if (!form.iban.trim()) e.iban = "Verplicht";
-    if (!form.betaalwijze.trim()) e.betaalwijze = "Verplicht";
+    else if (!isValidIBAN(form.iban)) e.iban = "Ongeldig IBAN-nummer";
+    if (!form.betaalwijze) e.betaalwijze = "Verplicht";
     if (form.typeSchade === "auto") {
       if (!form.bestuurderNaam.trim()) e.bestuurderNaam = "Verplicht";
       if (!form.bestuurderGeboortedatum) e.bestuurderGeboortedatum = "Verplicht";
