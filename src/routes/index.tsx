@@ -13,6 +13,7 @@ interface FormState {
   email: string;
   telefoon: string;
   typeSchade: TypeSchade;
+  typeSchadeAndere: string;
   datumSchade: string; // yyyy-mm-dd from input
   btwPlichtig: "ja" | "nee" | "";
   btwRecuperatie: BtwRecup;
@@ -30,6 +31,7 @@ const initial: FormState = {
   email: "",
   telefoon: "",
   typeSchade: "",
+  typeSchadeAndere: "",
   datumSchade: "",
   btwPlichtig: "",
   btwRecuperatie: "",
@@ -41,6 +43,30 @@ const initial: FormState = {
   akkoordJuistheid: false,
   akkoordGdpr: false,
 };
+
+const BETAALWIJZE_OPTIES = [
+  "Op IBAN nr",
+  "Op IBAN WelZeker",
+  "Via erkend hersteller",
+  "Via naturaherstelling",
+] as const;
+
+// IBAN validation using mod-97 checksum
+function isValidIBAN(raw: string): boolean {
+  const iban = raw.replace(/\s+/g, "").toUpperCase();
+  if (!/^[A-Z]{2}\d{2}[A-Z0-9]{11,30}$/.test(iban)) return false;
+  const rearranged = iban.slice(4) + iban.slice(0, 4);
+  const converted = rearranged
+    .split("")
+    .map((c) => (/[A-Z]/.test(c) ? (c.charCodeAt(0) - 55).toString() : c))
+    .join("");
+  // mod-97 on long numeric string
+  let remainder = 0;
+  for (let i = 0; i < converted.length; i += 7) {
+    remainder = Number(String(remainder) + converted.substring(i, i + 7)) % 97;
+  }
+  return remainder === 1;
+}
 
 function toDDMMYYYY(iso: string): string {
   if (!iso) return "";
@@ -77,16 +103,20 @@ function IntakeForm() {
       e.email = "Ongeldig e-mailadres";
     if (!form.telefoon.trim()) e.telefoon = "Verplicht";
     if (!form.typeSchade) e.typeSchade = "Verplicht";
+    if (form.typeSchade === "andere" && !form.typeSchadeAndere.trim())
+      e.typeSchadeAndere = "Verplicht — geef een omschrijving";
     if (!form.datumSchade) e.datumSchade = "Verplicht";
     if (!form.btwPlichtig) e.btwPlichtig = "Verplicht";
-    if (!form.btwRecuperatie) e.btwRecuperatie = "Verplicht";
-    if (form.btwRecuperatie === "gedeeltelijk") {
+    if (form.btwPlichtig === "ja" && !form.btwRecuperatie)
+      e.btwRecuperatie = "Verplicht";
+    if (form.btwPlichtig === "ja" && form.btwRecuperatie === "gedeeltelijk") {
       const n = Number(form.btwPercentage);
       if (!form.btwPercentage || Number.isNaN(n) || n < 0 || n > 100)
         e.btwPercentage = "Geef een percentage tussen 0 en 100";
     }
     if (!form.iban.trim()) e.iban = "Verplicht";
-    if (!form.betaalwijze.trim()) e.betaalwijze = "Verplicht";
+    else if (!isValidIBAN(form.iban)) e.iban = "Ongeldig IBAN-nummer";
+    if (!form.betaalwijze) e.betaalwijze = "Verplicht";
     if (form.typeSchade === "auto") {
       if (!form.bestuurderNaam.trim()) e.bestuurderNaam = "Verplicht";
       if (!form.bestuurderGeboortedatum) e.bestuurderGeboortedatum = "Verplicht";
@@ -113,13 +143,17 @@ function IntakeForm() {
       email: form.email.trim(),
       telefoon: form.telefoon.trim(),
       typeSchade: form.typeSchade,
+      typeSchadeAndere:
+        form.typeSchade === "andere" ? form.typeSchadeAndere.trim() : null,
       datumSchade: toDDMMYYYY(form.datumSchade),
       btwPlichtig: form.btwPlichtig,
-      btwRecuperatie: form.btwRecuperatie,
+      btwRecuperatie: form.btwPlichtig === "ja" ? form.btwRecuperatie : null,
       btwPercentage:
-        form.btwRecuperatie === "gedeeltelijk" ? Number(form.btwPercentage) : null,
-      iban: form.iban.trim(),
-      betaalwijze: form.betaalwijze.trim(),
+        form.btwPlichtig === "ja" && form.btwRecuperatie === "gedeeltelijk"
+          ? Number(form.btwPercentage)
+          : null,
+      iban: form.iban.replace(/\s+/g, "").toUpperCase(),
+      betaalwijze: form.betaalwijze,
       bestuurderNaam: form.typeSchade === "auto" ? form.bestuurderNaam.trim() : null,
       bestuurderGeboortedatum:
         form.typeSchade === "auto" ? toDDMMYYYY(form.bestuurderGeboortedatum) : null,
@@ -240,6 +274,17 @@ function IntakeForm() {
                 <option value="andere">Andere</option>
               </select>
             </Field>
+            {form.typeSchade === "andere" && (
+              <Field label="Omschrijving schade" error={errors.typeSchadeAndere}>
+                <textarea
+                  value={form.typeSchadeAndere}
+                  onChange={(e) => update("typeSchadeAndere", e.target.value)}
+                  rows={3}
+                  placeholder="Beschrijf uw schade"
+                  className={inputCls}
+                />
+              </Field>
+            )}
             <Field label="Datum schade" error={errors.datumSchade}>
               <input
                 type="date"
@@ -280,7 +325,13 @@ function IntakeForm() {
                       type="radio"
                       name="btwPlichtig"
                       checked={form.btwPlichtig === v}
-                      onChange={() => update("btwPlichtig", v)}
+                      onChange={() =>
+                        setForm((f) => ({
+                          ...f,
+                          btwPlichtig: v,
+                          ...(v === "nee" ? { btwRecuperatie: "" as const, btwPercentage: "" } : {}),
+                        }))
+                      }
                       className="h-4 w-4 accent-[color:var(--brand)]"
                     />
                     <span className="capitalize">{v}</span>
@@ -290,17 +341,23 @@ function IntakeForm() {
             </Field>
             <Field label="BTW recupereren" error={errors.btwRecuperatie}>
               <select
-                value={form.btwRecuperatie}
+                value={form.btwPlichtig === "ja" ? form.btwRecuperatie : ""}
                 onChange={(e) => update("btwRecuperatie", e.target.value as BtwRecup)}
-                className={inputCls}
+                disabled={form.btwPlichtig !== "ja"}
+                className={`${inputCls} disabled:cursor-not-allowed disabled:bg-secondary disabled:text-muted-foreground disabled:opacity-70`}
               >
                 <option value="">Kies…</option>
                 <option value="volledig">Volledig</option>
                 <option value="gedeeltelijk">Gedeeltelijk</option>
                 <option value="niet">Niet</option>
               </select>
+              {form.btwPlichtig === "nee" && (
+                <p className="mt-1 text-xs text-muted-foreground">
+                  Niet van toepassing (niet BTW-plichtig).
+                </p>
+              )}
             </Field>
-            {form.btwRecuperatie === "gedeeltelijk" && (
+            {form.btwPlichtig === "ja" && form.btwRecuperatie === "gedeeltelijk" && (
               <Field label="BTW-percentage" error={errors.btwPercentage}>
                 <input
                   type="number"
@@ -323,13 +380,18 @@ function IntakeForm() {
               />
             </Field>
             <Field label="Betaalwijze" error={errors.betaalwijze}>
-              <input
-                type="text"
+              <select
                 value={form.betaalwijze}
                 onChange={(e) => update("betaalwijze", e.target.value)}
-                placeholder="bv. overschrijving"
                 className={inputCls}
-              />
+              >
+                <option value="">Kies…</option>
+                {BETAALWIJZE_OPTIES.map((opt) => (
+                  <option key={opt} value={opt}>
+                    {opt}
+                  </option>
+                ))}
+              </select>
             </Field>
           </Section>
 
