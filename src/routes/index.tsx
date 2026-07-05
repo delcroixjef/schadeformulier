@@ -130,7 +130,7 @@ function IntakeForm() {
     return e;
   };
 
-  const onSubmit = (ev: React.FormEvent) => {
+  const onSubmit = async (ev: React.FormEvent) => {
     ev.preventDefault();
     const e = validate();
     setErrors(e);
@@ -164,6 +164,28 @@ function IntakeForm() {
       handtekening: sigRef.current!.toDataURL(),
     };
     console.log("[WelZeker schade-intake]", payload);
+
+    setSending(true);
+    setSendError(null);
+    try {
+      const res = await fetch("/api/public/send-schade", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+      if (!res.ok) {
+        const info = await res.text();
+        throw new Error(info || `HTTP ${res.status}`);
+      }
+    } catch (err) {
+      console.error("Verzenden mislukt", err);
+      setSendError(
+        "Verzenden van de e-mail is mislukt. Uw gegevens zijn niet ontvangen. Probeer het opnieuw.",
+      );
+      setSending(false);
+      return;
+    }
+    setSending(false);
     setSubmitted(payload);
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
