@@ -83,6 +83,8 @@ function IntakeForm() {
   const [submitted, setSubmitted] = useState<any | null>(null);
   const [debugOpen, setDebugOpen] = useState(false);
   const [copyOk, setCopyOk] = useState(false);
+  const [sending, setSending] = useState(false);
+  const [sendError, setSendError] = useState<string | null>(null);
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
