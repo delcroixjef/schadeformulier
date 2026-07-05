@@ -457,12 +457,19 @@ function IntakeForm() {
             </div>
           </Section>
 
+          {sendError && (
+            <div className="rounded-md border border-destructive/40 bg-destructive/10 px-4 py-3 text-sm text-destructive">
+              {sendError}
+            </div>
+          )}
+
           <div className="pt-2">
             <button
               type="submit"
-              className="w-full rounded-md bg-brand px-6 py-3 text-base font-semibold text-brand-foreground shadow-sm transition hover:brightness-95 focus:outline-none focus:ring-2 focus:ring-brand focus:ring-offset-2"
+              disabled={sending}
+              className="w-full rounded-md bg-brand px-6 py-3 text-base font-semibold text-brand-foreground shadow-sm transition hover:brightness-95 focus:outline-none focus:ring-2 focus:ring-brand focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60"
             >
-              Verzenden
+              {sending ? "Bezig met verzenden…" : "Verzenden"}
             </button>
           </div>
         </form>
