@@ -1,9 +1,8 @@
 import { createFileRoute } from "@tanstack/react-router";
 
-const GATEWAY_URL = "https://connector-gateway.lovable.dev/resend";
 const TO = "schadeformulier@welzeker.be";
-// Zonder eigen geverifieerd domein is dit het Resend-testadres
-const FROM = "WelZeker Schade <onboarding@resend.dev>";
+const FROM_MAILBOX = "schadeformulier@welzeker.be";
+const GRAPH_BASE = "https://graph.microsoft.com/v1.0";
 
 function corsHeaders(): HeadersInit {
   return {
@@ -13,16 +12,38 @@ function corsHeaders(): HeadersInit {
   };
 }
 
+async function getGraphToken(tenantId: string, clientId: string, clientSecret: string): Promise<string> {
+  const params = new URLSearchParams({
+    client_id: clientId,
+    client_secret: clientSecret,
+    scope: "https://graph.microsoft.com/.default",
+    grant_type: "client_credentials",
+  });
+  const res = await fetch(`https://login.microsoftonline.com/${tenantId}/oauth2/v2.0/token`, {
+    method: "POST",
+    headers: { "Content-Type": "application/x-www-form-urlencoded" },
+    body: params.toString(),
+  });
+  const text = await res.text();
+  if (!res.ok) {
+    throw new Error(`Token fout ${res.status}: ${text}`);
+  }
+  const json = JSON.parse(text) as { access_token?: string };
+  if (!json.access_token) throw new Error("Geen access_token ontvangen");
+  return json.access_token;
+}
+
 export const Route = createFileRoute("/api/public/send-schade")({
   server: {
     handlers: {
       OPTIONS: async () => new Response(null, { status: 204, headers: corsHeaders() }),
       POST: async ({ request }) => {
-        const lovableKey = process.env.LOVABLE_API_KEY;
-        const resendKey = process.env.RESEND_API_KEY;
-        if (!lovableKey || !resendKey) {
+        const tenantId = process.env.MS_TENANT_ID;
+        const clientId = process.env.MS_CLIENT_ID;
+        const clientSecret = process.env.MS_CLIENT_SECRET;
+        if (!tenantId || !clientId || !clientSecret) {
           return new Response(
-            JSON.stringify({ error: "E-mailconfiguratie ontbreekt" }),
+            JSON.stringify({ error: "E-mailconfiguratie ontbreekt (Microsoft 365)" }),
             { status: 500, headers: { "Content-Type": "application/json", ...corsHeaders() } },
           );
         }
@@ -45,26 +66,41 @@ export const Route = createFileRoute("/api/public/send-schade")({
         // Body = EXACT het JSON-object als platte tekst
         const bodyText = JSON.stringify(payload, null, 2);
 
-        const res = await fetch(`${GATEWAY_URL}/emails`, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${lovableKey}`,
-            "X-Connection-Api-Key": resendKey,
-          },
-          body: JSON.stringify({
-            from: FROM,
-            to: [TO],
-            subject,
-            text: bodyText,
-          }),
-        });
-
-        const respText = await res.text();
-        if (!res.ok) {
-          console.error("Resend fout", res.status, respText);
+        let token: string;
+        try {
+          token = await getGraphToken(tenantId, clientId, clientSecret);
+        } catch (err) {
+          console.error("MS Graph token fout", err);
           return new Response(
-            JSON.stringify({ error: "E-mail versturen mislukt", status: res.status, detail: respText }),
+            JSON.stringify({ error: "Authenticatie bij Microsoft mislukt", detail: String(err) }),
+            { status: 502, headers: { "Content-Type": "application/json", ...corsHeaders() } },
+          );
+        }
+
+        const graphRes = await fetch(
+          `${GRAPH_BASE}/users/${encodeURIComponent(FROM_MAILBOX)}/sendMail`,
+          {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${token}`,
+            },
+            body: JSON.stringify({
+              message: {
+                subject,
+                body: { contentType: "Text", content: bodyText },
+                toRecipients: [{ emailAddress: { address: TO } }],
+              },
+              saveToSentItems: true,
+            }),
+          },
+        );
+
+        if (!graphRes.ok) {
+          const detail = await graphRes.text();
+          console.error("MS Graph sendMail fout", graphRes.status, detail);
+          return new Response(
+            JSON.stringify({ error: "E-mail versturen mislukt", status: graphRes.status, detail }),
             { status: 502, headers: { "Content-Type": "application/json", ...corsHeaders() } },
           );
         }
