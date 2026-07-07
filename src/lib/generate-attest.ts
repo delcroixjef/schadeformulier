@@ -136,9 +136,20 @@ export async function generateAttestPdf(p: AttestPayload): Promise<Uint8Array> {
     throw new Error("Handtekening ontbreekt of ongeldig formaat");
   }
   const { bytes: sigBytes, mime: sigMime } = dataUrlToBytes(p.handtekening);
-  const sigImg = sigMime.includes("png")
-    ? await pdf.embedPng(sigBytes)
-    : await pdf.embedJpg(sigBytes);
+  let sigImg;
+  try {
+    sigImg = sigMime.includes("jpeg") || sigMime.includes("jpg")
+      ? await pdf.embedJpg(sigBytes)
+      : await pdf.embedPng(sigBytes);
+  } catch {
+    // Fallback: probeer het andere formaat
+    try {
+      sigImg = await pdf.embedPng(sigBytes);
+    } catch {
+      sigImg = await pdf.embedJpg(sigBytes);
+    }
+  }
+
   const boxX = 312;
   const boxYFromTop = 713;
   const boxW = 160;
