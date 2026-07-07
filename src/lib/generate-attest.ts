@@ -66,71 +66,68 @@ export async function generateAttestPdf(p: AttestPayload): Promise<Uint8Array> {
     });
   };
 
-  // Coordinates are measured from top of A4 page (we convert with height - y).
-  // Header refertes / schadedatum
-  draw(p.code ?? "", 175, 150);          // Uw referte
-  draw(p.code ?? "", 175, 175);          // Onze referte (zelfde code)
-  draw(p.datumSchade, 175, 200);         // Schadedatum
+  // Coordinates in "pt from top of A4 page" (converted via height - y).
+  draw(p.code ?? "", 180, 183);   // Uw referte
+  draw(p.code ?? "", 180, 207);   // Onze referte
+  draw(p.datumSchade, 180, 231);  // Schadedatum
 
   // 1. Naam
-  draw(p.naam, 175, 320);
-
-  // 2. Beroep — niet in formulier, leeg laten
+  draw(p.naam, 200, 339);
+  // 2. Beroep — niet in formulier
 
   // 3. Onderworpen BTW  → checkbox JA of NEEN
   const checkChar = "X";
-  if (p.btwPlichtig === "ja") draw(checkChar, 274, 420, 12, true);
-  if (p.btwPlichtig === "nee") draw(checkChar, 313, 420, 12, true);
+  if (p.btwPlichtig === "ja") draw(checkChar, 279, 402, 12, true);
+  if (p.btwPlichtig === "nee") draw(checkChar, 316, 402, 12, true);
 
   // 4. Aftrek
   if (p.btwPlichtig === "ja" && p.btwRecuperatie) {
     if (p.btwRecuperatie === "volledig" || p.btwRecuperatie === "gedeeltelijk") {
-      draw(checkChar, 155, 470, 12, true); // "Afgetrokken worden"
+      draw(checkChar, 149, 449, 12, true); // "Afgetrokken worden"
       if (p.btwRecuperatie === "volledig") {
-        draw(checkChar, 350, 470, 12, true); // Volledig
+        draw(checkChar, 293, 449, 12, true); // Volledig
       } else {
-        draw(checkChar, 350, 495, 12, true); // Gedeeltelijk
-        draw(String(p.btwPercentage ?? ""), 470, 495);
+        draw(checkChar, 293, 468, 12, true); // Gedeeltelijk
+        draw(String(p.btwPercentage ?? ""), 400, 468);
       }
     } else if (p.btwRecuperatie === "niet") {
-      draw(checkChar, 155, 520, 12, true); // Niet afgetrokken
+      draw(checkChar, 149, 484, 12, true); // Niet afgetrokken
     }
   }
 
   // 5. Betaalwijze
   const bw = p.betaalwijze;
   if (bw === "Op IBAN nr") {
-    draw(checkChar, 155, 590, 12, true);
-    draw(p.iban, 335, 590);
+    draw(checkChar, 135, 533, 12, true);
+    draw(p.iban, 305, 533);
   } else if (bw === "Via erkend hersteller") {
-    draw(checkChar, 155, 610, 12, true);
+    draw(checkChar, 135, 549, 12, true);
   } else if (bw === "Op IBAN WelZeker") {
-    draw(checkChar, 155, 630, 12, true);
+    draw(checkChar, 135, 565, 12, true);
   } else if (bw === "Via naturaherstelling") {
-    draw(checkChar, 155, 650, 12, true);
-    draw("Naturaherstelling — IBAN: " + p.iban, 205, 650);
+    draw(checkChar, 135, 581, 12, true);
+    draw("Naturaherstelling — IBAN: " + p.iban, 175, 581);
   } else {
-    draw(checkChar, 155, 650, 12, true);
-    draw(`${bw} — IBAN: ${p.iban}`, 205, 650);
+    draw(checkChar, 135, 581, 12, true);
+    draw(`${bw} — IBAN: ${p.iban}`, 175, 581);
   }
 
   // 6. Bestuurder
-  if (p.bestuurderNaam) draw(p.bestuurderNaam, 380, 700);
+  if (p.bestuurderNaam) draw(p.bestuurderNaam, 355, 619);
   // 7. Geboortedatum bestuurder
-  if (p.bestuurderGeboortedatum) draw(p.bestuurderGeboortedatum, 380, 725);
+  if (p.bestuurderGeboortedatum) draw(p.bestuurderGeboortedatum, 355, 643);
 
-  // Handtekening
+  // Handtekening — box in template ~x=378 y_top=705 w=142 h=58
   try {
     const { bytes, mime } = dataUrlToBytes(p.handtekening);
     const img = mime.includes("png")
       ? await pdf.embedPng(bytes)
       : await pdf.embedJpg(bytes);
-    // Signature box in template is roughly at bottom right
-    const boxW = 170;
-    const boxH = 75;
-    const boxX = 390;
-    const boxYFromTop = 850; // top of box from page top
-    const scaled = img.scaleToFit(boxW - 10, boxH - 10);
+    const boxX = 378;
+    const boxYFromTop = 705;
+    const boxW = 142;
+    const boxH = 58;
+    const scaled = img.scaleToFit(boxW - 8, boxH - 8);
     page.drawImage(img, {
       x: boxX + (boxW - scaled.width) / 2,
       y: height - boxYFromTop - boxH + (boxH - scaled.height) / 2,
