@@ -77,45 +77,45 @@ export async function generateAttestPdf(p: AttestPayload): Promise<Uint8Array> {
 
   // 3. Onderworpen BTW  → checkbox JA of NEEN
   const checkChar = "X";
-  if (p.btwPlichtig === "ja") draw(checkChar, 279, 402, 12, true);
-  if (p.btwPlichtig === "nee") draw(checkChar, 316, 402, 12, true);
+  if (p.btwPlichtig === "ja") draw(checkChar, 290, 407, 11, true);
+  if (p.btwPlichtig === "nee") draw(checkChar, 328, 407, 11, true);
 
   // 4. Aftrek
   if (p.btwPlichtig === "ja" && p.btwRecuperatie) {
     if (p.btwRecuperatie === "volledig" || p.btwRecuperatie === "gedeeltelijk") {
-      draw(checkChar, 149, 449, 12, true); // "Afgetrokken worden"
+      draw(checkChar, 156, 458, 11, true); // "Afgetrokken worden"
       if (p.btwRecuperatie === "volledig") {
-        draw(checkChar, 293, 449, 12, true); // Volledig
+        draw(checkChar, 300, 458, 11, true); // Volledig
       } else {
-        draw(checkChar, 293, 468, 12, true); // Gedeeltelijk
-        draw(String(p.btwPercentage ?? ""), 400, 468);
+        draw(checkChar, 300, 478, 11, true); // Gedeeltelijk
+        draw(String(p.btwPercentage ?? ""), 415, 478);
       }
     } else if (p.btwRecuperatie === "niet") {
-      draw(checkChar, 149, 484, 12, true); // Niet afgetrokken
+      draw(checkChar, 156, 494, 11, true); // Niet afgetrokken
     }
   }
 
   // 5. Betaalwijze
   const bw = p.betaalwijze;
   if (bw === "Op IBAN nr") {
-    draw(checkChar, 135, 533, 12, true);
-    draw(p.iban, 305, 533);
+    draw(checkChar, 142, 543, 11, true);
+    draw(p.iban, 350, 543);
   } else if (bw === "Via erkend hersteller") {
-    draw(checkChar, 135, 549, 12, true);
+    draw(checkChar, 142, 560, 11, true);
   } else if (bw === "Op IBAN WelZeker") {
-    draw(checkChar, 135, 565, 12, true);
+    draw(checkChar, 142, 576, 11, true);
   } else if (bw === "Via naturaherstelling") {
-    draw(checkChar, 135, 581, 12, true);
-    draw("Naturaherstelling — IBAN: " + p.iban, 175, 581);
+    draw(checkChar, 142, 592, 11, true);
+    draw("Naturaherstelling — IBAN: " + p.iban, 185, 592);
   } else {
-    draw(checkChar, 135, 581, 12, true);
-    draw(`${bw} — IBAN: ${p.iban}`, 175, 581);
+    draw(checkChar, 142, 592, 11, true);
+    draw(`${bw} — IBAN: ${p.iban}`, 185, 592);
   }
 
   // 6. Bestuurder
-  if (p.bestuurderNaam) draw(p.bestuurderNaam, 355, 619);
+  if (p.bestuurderNaam) draw(p.bestuurderNaam, 355, 631);
   // 7. Geboortedatum bestuurder
-  if (p.bestuurderGeboortedatum) draw(p.bestuurderGeboortedatum, 355, 643);
+  if (p.bestuurderGeboortedatum) draw(p.bestuurderGeboortedatum, 355, 658);
 
   // Handtekening — box in template ~x=378 y_top=705 w=142 h=58
   try {
