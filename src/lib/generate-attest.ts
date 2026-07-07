@@ -1,4 +1,4 @@
-import { PDFDocument, StandardFonts, rgb } from "pdf-lib";
+import { PDFDocument, StandardFonts, rgb } from "pdf-lib/dist/pdf-lib.esm.js";
 import { BTW_TEMPLATE_PDF_BASE64 } from "./btw-template";
 
 export interface AttestPayload {
