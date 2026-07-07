@@ -99,7 +99,7 @@ export async function generateAttestPdf(p: AttestPayload): Promise<Uint8Array> {
         check(283, 444); // Volledig
       } else {
         check(283, 461); // Gedeeltelijk
-        draw(String(p.btwPercentage ?? "") + " %", 395, 473);
+        draw(String(p.btwPercentage ?? ""), 388, 473);
       }
     } else if (p.btwRecuperatie === "niet") {
       check(107, 478); // Niet afgetrokken
@@ -110,7 +110,9 @@ export async function generateAttestPdf(p: AttestPayload): Promise<Uint8Array> {
   const bw = p.betaalwijze;
   if (bw === "Op IBAN nr") {
     check(107, 525);
-    draw(p.iban, 285, 536);
+    // Template heeft al "BE " staan; enkel het restant invullen
+    const ibanRest = p.iban.replace(/^BE/i, "").trim();
+    draw(ibanRest, 300, 536);
   } else if (bw === "Via erkend hersteller") {
     check(107, 542);
   } else if (bw === "Op IBAN WelZeker") {
