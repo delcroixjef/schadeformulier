@@ -111,16 +111,6 @@ export async function generateAttestPdf(p: AttestPayload): Promise<Uint8Array> {
   if (bw === "Op IBAN nr") {
     check(107, 525);
     draw(p.iban, 285, 536);
-    } else if (p.btwRecuperatie === "niet") {
-      check(107, 478); // Niet afgetrokken
-    }
-  }
-
-  // 5. Betaalwijze
-  const bw = p.betaalwijze;
-  if (bw === "Op IBAN nr") {
-    check(107, 525);
-    draw(p.iban, 250, 536);
   } else if (bw === "Via erkend hersteller") {
     check(107, 542);
   } else if (bw === "Op IBAN WelZeker") {
