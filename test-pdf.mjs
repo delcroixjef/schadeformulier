@@ -1,7 +1,8 @@
-import { generateAttestPdf } from './src/lib/generate-attest';
-import { writeFileSync } from 'fs';
-// tiny 1x1 png signature
-const sig = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAGQAAAAyCAYAAACqNX6+AAAAOklEQVR4nO3PAQ0AAAjDMK5/aeDhBmXQmXZFRBhh1LRDaGgLwaB9EAaCQfsgDASD9kEYCAbtgzD4AwAA//9YrgFO3xkFxAAAAABJRU5ErkJggg==';
+console.log('start');
+const { generateAttestPdf } = await import('./src/lib/generate-attest.ts');
+console.log('imported');
+const { writeFileSync } = await import('fs');
+const sig = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=';
 const pdf = await generateAttestPdf({
   code:'ABC-123', naam:'Jan Janssens', email:'jan@example.com', telefoon:'0470123456',
   typeSchade:'auto', typeSchadeAndere:null, datumSchade:'07-07-2026',
@@ -12,3 +13,4 @@ const pdf = await generateAttestPdf({
 });
 writeFileSync('/tmp/attest.pdf', pdf);
 console.log('wrote', pdf.length);
+process.exit(0);
