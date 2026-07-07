@@ -85,13 +85,25 @@ export const Route = createFileRoute("/api/public/send-schade")({
 
         // Bouw attest.pdf op basis van de payload
         let pdfBase64: string;
+        let pdfSize = 0;
         try {
           const pdfBytes = await generateAttestPdf(payload as unknown as AttestPayload);
+          pdfSize = pdfBytes.length;
           pdfBase64 = bytesToBase64(pdfBytes);
+          console.log(
+            `[send-schade] PDF ok: ${pdfSize} bytes, base64 ${pdfBase64.length} chars`,
+          );
         } catch (err) {
-          console.error("PDF genereren mislukt", err);
+          console.error("[send-schade] PDF genereren mislukt", err);
           return new Response(
             JSON.stringify({ error: "PDF genereren mislukt", detail: String(err) }),
+            { status: 500, headers: { "Content-Type": "application/json", ...corsHeaders() } },
+          );
+        }
+        if (!pdfBase64 || pdfSize < 500) {
+          console.error("[send-schade] PDF leeg of te klein, verzending afgebroken");
+          return new Response(
+            JSON.stringify({ error: "PDF leeg" }),
             { status: 500, headers: { "Content-Type": "application/json", ...corsHeaders() } },
           );
         }
