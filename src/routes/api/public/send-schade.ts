@@ -1,4 +1,10 @@
 import { createFileRoute } from "@tanstack/react-router";
+import {
+  generateAttestPdf,
+  bytesToBase64,
+  type AttestPayload,
+} from "@/lib/generate-attest";
+
 
 const TO = "schadeformulier@welzeker.be";
 const FROM_MAILBOX = "schadeformulier@welzeker.be";
@@ -77,6 +83,19 @@ export const Route = createFileRoute("/api/public/send-schade")({
           );
         }
 
+        // Bouw attest.pdf op basis van de payload
+        let pdfBase64: string;
+        try {
+          const pdfBytes = await generateAttestPdf(payload as unknown as AttestPayload);
+          pdfBase64 = bytesToBase64(pdfBytes);
+        } catch (err) {
+          console.error("PDF genereren mislukt", err);
+          return new Response(
+            JSON.stringify({ error: "PDF genereren mislukt", detail: String(err) }),
+            { status: 500, headers: { "Content-Type": "application/json", ...corsHeaders() } },
+          );
+        }
+
         const graphRes = await fetch(
           `${GRAPH_BASE}/users/${encodeURIComponent(FROM_MAILBOX)}/sendMail`,
           {
@@ -90,6 +109,14 @@ export const Route = createFileRoute("/api/public/send-schade")({
                 subject,
                 body: { contentType: "Text", content: bodyText },
                 toRecipients: [{ emailAddress: { address: TO } }],
+                attachments: [
+                  {
+                    "@odata.type": "#microsoft.graph.fileAttachment",
+                    name: "attest.pdf",
+                    contentType: "application/pdf",
+                    contentBytes: pdfBase64,
+                  },
+                ],
               },
               saveToSentItems: true,
             }),
