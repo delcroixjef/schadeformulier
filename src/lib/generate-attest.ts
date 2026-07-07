@@ -29,10 +29,12 @@ function base64ToBytes(b64: string): Uint8Array {
 }
 
 function dataUrlToBytes(dataUrl: string): { bytes: Uint8Array; mime: string } {
-  const match = /^data:(image\/(png|jpeg|jpg));base64,(.+)$/i.exec(dataUrl);
+  // Tolerant: accepteer image/png, image/jpeg, image/jpg (met of zonder extra params)
+  const match = /^data:(image\/[a-z0-9.+-]+)(?:;[^,]*)?;base64,(.+)$/i.exec(dataUrl.trim());
   if (!match) throw new Error("Ongeldige handtekening data URL");
-  return { bytes: base64ToBytes(match[3]), mime: match[1].toLowerCase() };
+  return { bytes: base64ToBytes(match[2]), mime: match[1].toLowerCase() };
 }
+
 
 const LABEL: Record<string, string> = {
   auto: "Auto",
@@ -134,9 +136,20 @@ export async function generateAttestPdf(p: AttestPayload): Promise<Uint8Array> {
     throw new Error("Handtekening ontbreekt of ongeldig formaat");
   }
   const { bytes: sigBytes, mime: sigMime } = dataUrlToBytes(p.handtekening);
-  const sigImg = sigMime.includes("png")
-    ? await pdf.embedPng(sigBytes)
-    : await pdf.embedJpg(sigBytes);
+  let sigImg;
+  try {
+    sigImg = sigMime.includes("jpeg") || sigMime.includes("jpg")
+      ? await pdf.embedJpg(sigBytes)
+      : await pdf.embedPng(sigBytes);
+  } catch {
+    // Fallback: probeer het andere formaat
+    try {
+      sigImg = await pdf.embedPng(sigBytes);
+    } catch {
+      sigImg = await pdf.embedJpg(sigBytes);
+    }
+  }
+
   const boxX = 312;
   const boxYFromTop = 713;
   const boxW = 160;
