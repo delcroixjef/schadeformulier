@@ -66,56 +66,67 @@ export async function generateAttestPdf(p: AttestPayload): Promise<Uint8Array> {
     });
   };
 
-  // Coordinates in "pt from top of A4 page" (converted via height - y).
-  draw(p.code ?? "", 180, 183);   // Uw referte
-  draw(p.code ?? "", 180, 207);   // Onze referte
-  draw(p.datumSchade, 180, 231);  // Schadedatum
+  // Filled square inside a checkbox. bx/by = top-left of the box (pt from top).
+  const check = (bx: number, by: number) => {
+    const s = 6;
+    page.drawRectangle({
+      x: bx + 2,
+      y: height - by - 2 - s,
+      width: s,
+      height: s,
+      color: rgb(0.05, 0.35, 0.15),
+    });
+  };
+
+  // Values (y ≈ text baseline = yMax from template bbox).
+  draw(p.code ?? "", 150, 192);   // Uw referte
+  draw(p.code ?? "", 150, 215);   // Onze referte
+  draw(p.datumSchade, 150, 238);  // Schadedatum
 
   // 1. Naam
-  draw(p.naam, 200, 339);
+  draw(p.naam, 200, 346);
   // 2. Beroep — niet in formulier
 
-  // 3. Onderworpen BTW  → checkbox JA of NEEN
-  const checkChar = "X";
-  if (p.btwPlichtig === "ja") draw(checkChar, 290, 407, 11, true);
-  if (p.btwPlichtig === "nee") draw(checkChar, 328, 407, 11, true);
+  // 3. Onderworpen BTW
+  if (p.btwPlichtig === "ja") check(283, 397);
+  if (p.btwPlichtig === "nee") check(310, 397);
 
   // 4. Aftrek
   if (p.btwPlichtig === "ja" && p.btwRecuperatie) {
     if (p.btwRecuperatie === "volledig" || p.btwRecuperatie === "gedeeltelijk") {
-      draw(checkChar, 156, 458, 11, true); // "Afgetrokken worden"
+      check(107, 444); // "Afgetrokken worden"
       if (p.btwRecuperatie === "volledig") {
-        draw(checkChar, 300, 458, 11, true); // Volledig
+        check(283, 444); // Volledig
       } else {
-        draw(checkChar, 300, 478, 11, true); // Gedeeltelijk
-        draw(String(p.btwPercentage ?? ""), 415, 478);
+        check(283, 461); // Gedeeltelijk
+        draw(String(p.btwPercentage ?? ""), 345, 473);
       }
     } else if (p.btwRecuperatie === "niet") {
-      draw(checkChar, 156, 494, 11, true); // Niet afgetrokken
+      check(107, 478); // Niet afgetrokken
     }
   }
 
   // 5. Betaalwijze
   const bw = p.betaalwijze;
   if (bw === "Op IBAN nr") {
-    draw(checkChar, 142, 543, 11, true);
-    draw(p.iban, 350, 543);
+    check(107, 525);
+    draw(p.iban, 250, 536);
   } else if (bw === "Via erkend hersteller") {
-    draw(checkChar, 142, 560, 11, true);
+    check(107, 542);
   } else if (bw === "Op IBAN WelZeker") {
-    draw(checkChar, 142, 576, 11, true);
+    check(107, 559);
   } else if (bw === "Via naturaherstelling") {
-    draw(checkChar, 142, 592, 11, true);
-    draw("Naturaherstelling — IBAN: " + p.iban, 185, 592);
+    check(107, 575);
+    draw("Naturaherstelling — IBAN: " + p.iban, 165, 586);
   } else {
-    draw(checkChar, 142, 592, 11, true);
-    draw(`${bw} — IBAN: ${p.iban}`, 185, 592);
+    check(107, 575);
+    draw(`${bw} — IBAN: ${p.iban}`, 165, 586);
   }
 
-  // 6. Bestuurder
-  if (p.bestuurderNaam) draw(p.bestuurderNaam, 355, 631);
-  // 7. Geboortedatum bestuurder
-  if (p.bestuurderGeboortedatum) draw(p.bestuurderGeboortedatum, 355, 658);
+  // 6. Bestuurder — labels lopen tot ~x=393
+  if (p.bestuurderNaam) draw(p.bestuurderNaam, 400, 619);
+  // 7. Geboortedatum bestuurder — label loopt tot ~x=373
+  if (p.bestuurderGeboortedatum) draw(p.bestuurderGeboortedatum, 380, 649);
 
   // Handtekening — box in template ~x=378 y_top=705 w=142 h=58
   try {
