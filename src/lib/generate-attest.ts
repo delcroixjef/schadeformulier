@@ -137,7 +137,7 @@ export async function generateAttestPdf(p: AttestPayload): Promise<Uint8Array> {
       : await pdf.embedJpg(bytes);
     const boxX = 312;
     const boxYFromTop = 713;
-    const boxW = 220;
+    const boxW = 160;
     const boxH = 50;
     const scaled = img.scaleToFit(boxW - 8, boxH - 8);
     page.drawImage(img, {
