@@ -1,9 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
-import {
-  generateAttestPdf,
-  bytesToBase64,
-  type AttestPayload,
-} from "@/lib/generate-attest";
+import type { AttestPayload } from "@/lib/generate-attest";
+
 
 
 const TO = "schadeformulier@welzeker.be";
@@ -87,6 +84,7 @@ export const Route = createFileRoute("/api/public/send-schade")({
         let pdfBase64: string;
         let pdfSize = 0;
         try {
+          const { generateAttestPdf, bytesToBase64 } = await import("@/lib/generate-attest");
           const pdfBytes = await generateAttestPdf(payload as unknown as AttestPayload);
           pdfSize = pdfBytes.length;
           pdfBase64 = bytesToBase64(pdfBytes);
