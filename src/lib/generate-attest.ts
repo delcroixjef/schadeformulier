@@ -29,10 +29,12 @@ function base64ToBytes(b64: string): Uint8Array {
 }
 
 function dataUrlToBytes(dataUrl: string): { bytes: Uint8Array; mime: string } {
-  const match = /^data:(image\/(png|jpeg|jpg));base64,(.+)$/i.exec(dataUrl);
+  // Tolerant: accepteer image/png, image/jpeg, image/jpg (met of zonder extra params)
+  const match = /^data:(image\/[a-z0-9.+-]+)(?:;[^,]*)?;base64,(.+)$/i.exec(dataUrl.trim());
   if (!match) throw new Error("Ongeldige handtekening data URL");
-  return { bytes: base64ToBytes(match[3]), mime: match[1].toLowerCase() };
+  return { bytes: base64ToBytes(match[2]), mime: match[1].toLowerCase() };
 }
+
 
 const LABEL: Record<string, string> = {
   auto: "Auto",
