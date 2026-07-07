@@ -1,5 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
-import type { AttestPayload } from "@/lib/generate-attest";
+import { generateAttestPdf, bytesToBase64, type AttestPayload } from "@/lib/generate-attest";
+
 
 
 
