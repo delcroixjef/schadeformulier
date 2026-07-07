@@ -129,16 +129,16 @@ export async function generateAttestPdf(p: AttestPayload): Promise<Uint8Array> {
   // 7. Geboortedatum bestuurder — label loopt tot ~x=373
   if (p.bestuurderGeboortedatum) draw(p.bestuurderGeboortedatum, 380, 649);
 
-  // Handtekening — box in template ~x=378 y_top=705 w=142 h=58
+  // Handtekening — box in template (gemeten): x≈310, y_top≈713, w≈220, h≈50
   try {
     const { bytes, mime } = dataUrlToBytes(p.handtekening);
     const img = mime.includes("png")
       ? await pdf.embedPng(bytes)
       : await pdf.embedJpg(bytes);
-    const boxX = 378;
-    const boxYFromTop = 705;
-    const boxW = 142;
-    const boxH = 58;
+    const boxX = 312;
+    const boxYFromTop = 713;
+    const boxW = 220;
+    const boxH = 50;
     const scaled = img.scaleToFit(boxW - 8, boxH - 8);
     page.drawImage(img, {
       x: boxX + (boxW - scaled.width) / 2,
