@@ -130,25 +130,24 @@ export async function generateAttestPdf(p: AttestPayload): Promise<Uint8Array> {
   if (p.bestuurderGeboortedatum) draw(p.bestuurderGeboortedatum, 380, 649);
 
   // Handtekening — box in template (gemeten): x≈310, y_top≈713, w≈220, h≈50
-  try {
-    const { bytes, mime } = dataUrlToBytes(p.handtekening);
-    const img = mime.includes("png")
-      ? await pdf.embedPng(bytes)
-      : await pdf.embedJpg(bytes);
-    const boxX = 312;
-    const boxYFromTop = 713;
-    const boxW = 160;
-    const boxH = 50;
-    const scaled = img.scaleToFit(boxW - 8, boxH - 8);
-    page.drawImage(img, {
-      x: boxX + (boxW - scaled.width) / 2,
-      y: height - boxYFromTop - boxH + (boxH - scaled.height) / 2,
-      width: scaled.width,
-      height: scaled.height,
-    });
-  } catch (err) {
-    console.warn("Handtekening niet toegevoegd:", err);
+  if (!p.handtekening || !/^data:image\//i.test(p.handtekening)) {
+    throw new Error("Handtekening ontbreekt of ongeldig formaat");
   }
+  const { bytes: sigBytes, mime: sigMime } = dataUrlToBytes(p.handtekening);
+  const sigImg = sigMime.includes("png")
+    ? await pdf.embedPng(sigBytes)
+    : await pdf.embedJpg(sigBytes);
+  const boxX = 312;
+  const boxYFromTop = 713;
+  const boxW = 160;
+  const boxH = 50;
+  const scaled = sigImg.scaleToFit(boxW - 8, boxH - 8);
+  page.drawImage(sigImg, {
+    x: boxX + (boxW - scaled.width) / 2,
+    y: height - boxYFromTop - boxH + (boxH - scaled.height) / 2,
+    width: scaled.width,
+    height: scaled.height,
+  });
 
   // ---- Extra pagina: overige gegevens netjes onder titels ----
   const page2 = pdf.addPage([width, height]);
