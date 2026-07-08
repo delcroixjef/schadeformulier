@@ -102,9 +102,10 @@ export async function generateAttestPdf(p: AttestPayload): Promise<Uint8Array> {
   }
 
   // 5. Bestuurder naam
-  if (p.bestuurderNaam) draw(p.bestuurderNaam, 400, 478);
+  if (p.bestuurderNaam) draw(p.bestuurderNaam, 400, 487);
   // 6. Geboortedatum bestuurder
-  if (p.bestuurderGeboortedatum) draw(p.bestuurderGeboortedatum, 400, 508);
+  if (p.bestuurderGeboortedatum) draw(p.bestuurderGeboortedatum, 400, 517);
+
 
   // Handtekening — box rect: x=299.4, top=570.4, w=165.1, h=84.1
   if (!p.handtekening || !/^data:image\//i.test(p.handtekening)) {
