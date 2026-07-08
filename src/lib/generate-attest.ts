@@ -68,7 +68,7 @@ export async function generateAttestPdf(p: AttestPayload): Promise<Uint8Array> {
   draw(p.datumSchade || "", 160, 190);
 
   // 1. Naam
-  draw(p.naam || "", 140, 241.25);
+  draw(p.naam || "", 140, 239.75);
 
 
   // 2. Onderworpen aan de BTW  (JA box x≈283, NEEN box x≈310, y≈258)
