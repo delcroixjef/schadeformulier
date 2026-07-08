@@ -224,17 +224,6 @@ function IntakeForm() {
             </button>
           </div>
 
-          <DebugPanel
-            open={debugOpen}
-            onToggle={() => setDebugOpen((v) => !v)}
-            payload={submitted}
-            copyOk={copyOk}
-            onCopy={async () => {
-              await navigator.clipboard.writeText(JSON.stringify(submitted, null, 2));
-              setCopyOk(true);
-              setTimeout(() => setCopyOk(false), 1500);
-            }}
-          />
         </div>
       </main>
     );
