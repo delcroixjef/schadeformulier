@@ -127,7 +127,7 @@ export async function generateAttestPdf(p: AttestPayload): Promise<Uint8Array> {
   const boxTop = 570.4;
   const boxW = 165.1;
   const boxH = 84.1;
-  const scaled = sigImg.scaleToFit(boxW - 10, boxH - 10);
+  const scaled = sigImg.scaleToFit(boxW - 4, boxH - 4);
   page.drawImage(sigImg, {
     x: boxX + (boxW - scaled.width) / 2,
     y: height - boxTop - boxH + (boxH - scaled.height) / 2,
