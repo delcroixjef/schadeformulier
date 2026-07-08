@@ -68,7 +68,7 @@ export async function generateAttestPdf(p: AttestPayload): Promise<Uint8Array> {
   draw(p.datumSchade || "", 160, 190);
 
   // 1. Naam
-  draw(p.naam || "", 200, 230);
+  draw(p.naam || "", 160, 230);
 
   // 2. Onderworpen aan de BTW  (JA box x≈283, NEEN box x≈310, y≈258)
   if (p.btwPlichtig === "ja") check(283, 258);
@@ -101,9 +101,9 @@ export async function generateAttestPdf(p: AttestPayload): Promise<Uint8Array> {
   }
 
   // 5. Bestuurder naam
-  if (p.bestuurderNaam) draw(p.bestuurderNaam, 400, 469);
+  if (p.bestuurderNaam) draw(p.bestuurderNaam, 400, 478);
   // 6. Geboortedatum bestuurder
-  if (p.bestuurderGeboortedatum) draw(p.bestuurderGeboortedatum, 400, 499);
+  if (p.bestuurderGeboortedatum) draw(p.bestuurderGeboortedatum, 400, 508);
 
   // Handtekening — box rect: x=299.4, top=570.4, w=165.1, h=84.1
   if (!p.handtekening || !/^data:image\//i.test(p.handtekening)) {
@@ -127,7 +127,7 @@ export async function generateAttestPdf(p: AttestPayload): Promise<Uint8Array> {
   const boxTop = 570.4;
   const boxW = 165.1;
   const boxH = 84.1;
-  const scaled = sigImg.scaleToFit(boxW - 10, boxH - 10);
+  const scaled = sigImg.scaleToFit(boxW - 4, boxH - 4);
   page.drawImage(sigImg, {
     x: boxX + (boxW - scaled.width) / 2,
     y: height - boxTop - boxH + (boxH - scaled.height) / 2,
