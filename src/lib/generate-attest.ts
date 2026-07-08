@@ -29,109 +29,83 @@ function base64ToBytes(b64: string): Uint8Array {
 }
 
 function dataUrlToBytes(dataUrl: string): { bytes: Uint8Array; mime: string } {
-  // Tolerant: accepteer image/png, image/jpeg, image/jpg (met of zonder extra params)
   const match = /^data:(image\/[a-z0-9.+-]+)(?:;[^,]*)?;base64,(.+)$/i.exec(dataUrl.trim());
   if (!match) throw new Error("Ongeldige handtekening data URL");
   return { bytes: base64ToBytes(match[2]), mime: match[1].toLowerCase() };
 }
 
-
-const LABEL: Record<string, string> = {
-  auto: "Auto",
-  brand: "Brand",
-  woning: "Woning",
-  andere: "Andere",
-};
-
 export async function generateAttestPdf(p: AttestPayload): Promise<Uint8Array> {
   const templateBytes = base64ToBytes(BTW_TEMPLATE_PDF_BASE64);
   const pdf = await PDFDocument.load(templateBytes);
   const font = await pdf.embedFont(StandardFonts.Helvetica);
-  const fontBold = await pdf.embedFont(StandardFonts.HelveticaBold);
   const page = pdf.getPages()[0];
-  const { width, height } = page.getSize(); // A4 ~ 595 x 842
+  const { height } = page.getSize(); // A4 ~ 595 x 842
 
   const black = rgb(0, 0, 0);
-  const draw = (
-    text: string,
-    x: number,
-    y: number,
-    size = 11,
-    bold = false,
-  ) => {
+  const draw = (text: string, x: number, yFromTop: number, size = 11) => {
     page.drawText(text, {
       x,
-      y: height - y,
+      y: height - yFromTop,
       size,
-      font: bold ? fontBold : font,
+      font,
       color: black,
     });
   };
 
-  // Filled square inside a checkbox. bx/by = top-left of the box (pt from top).
-  const check = (bx: number, by: number) => {
+  // Filled square inside a checkbox. bx/by = top-left of the box in pt from top.
+  const check = (bx: number, byFromTop: number) => {
     const s = 6;
     page.drawRectangle({
       x: bx + 2,
-      y: height - by - 2 - s,
+      y: height - byFromTop - 2 - s,
       width: s,
       height: s,
       color: rgb(0.05, 0.35, 0.15),
     });
   };
 
-  // Values (y ≈ text baseline = yMax from template bbox).
-  draw(p.code ?? "", 150, 192);   // Uw referte
-  draw(p.code ?? "", 150, 215);   // Onze referte
-  draw(p.datumSchade, 150, 238);  // Schadedatum
+  // Schadedatum (label at y≈180)
+  draw(p.datumSchade || "", 160, 190);
 
   // 1. Naam
-  draw(p.naam, 200, 346);
-  // 2. Beroep — niet in formulier
+  draw(p.naam || "", 200, 230);
 
-  // 3. Onderworpen BTW
-  if (p.btwPlichtig === "ja") check(283, 397);
-  if (p.btwPlichtig === "nee") check(310, 397);
+  // 2. Onderworpen aan de BTW  (JA box x≈283, NEEN box x≈310, y≈258)
+  if (p.btwPlichtig === "ja") check(283, 258);
+  if (p.btwPlichtig === "nee") check(310, 258);
 
-  // 4. Aftrek
-  if (p.btwPlichtig === "ja" && p.btwRecuperatie) {
-    if (p.btwRecuperatie === "volledig" || p.btwRecuperatie === "gedeeltelijk") {
-      check(107, 444); // "Afgetrokken worden"
-      if (p.btwRecuperatie === "volledig") {
-        check(283, 444); // Volledig
-      } else {
-        check(283, 461); // Gedeeltelijk
-        draw(String(p.btwPercentage ?? ""), 355, 473);
-      }
-    } else if (p.btwRecuperatie === "niet") {
-      check(107, 478); // Niet afgetrokken
+  // 3. BTW aftrek
+  if (p.btwPlichtig === "ja" && (p.btwRecuperatie === "volledig" || p.btwRecuperatie === "gedeeltelijk")) {
+    check(107, 306); // Afgetrokken worden
+    if (p.btwRecuperatie === "volledig") {
+      check(283, 306); // Volledig
+    } else {
+      check(283, 323); // Gedeeltelijk
+      if (p.btwPercentage != null) draw(String(p.btwPercentage), 370, 333);
     }
+  } else if (p.btwPlichtig === "nee" || p.btwRecuperatie === "niet") {
+    check(107, 340); // Niet afgetrokken worden
   }
 
-  // 5. Betaalwijze
+  // 4. Betaalwijze
   const bw = p.betaalwijze;
   if (bw === "Op IBAN nr") {
-    check(107, 525);
-    const ibanRest = p.iban.replace(/^BE/i, "").trim();
-    draw(ibanRest, 315, 536);
+    check(107, 386); // Overschrijving op eigen IBAN
+    draw(p.iban || "", 275, 397);
   } else if (bw === "Via erkend hersteller") {
-    check(107, 542);
+    check(107, 403); // Rechtstreekse betaling aan hersteller
   } else if (bw === "Op IBAN WelZeker") {
-    check(107, 559);
+    check(107, 420); // Overschrijving op rekening WelZeker
   } else if (bw === "Via naturaherstelling") {
-    check(107, 575);
-    draw("Naturaherstelling — IBAN: " + p.iban, 165, 586);
-  } else {
-    check(107, 575);
-    draw(`${bw} — IBAN: ${p.iban}`, 165, 586);
+    check(107, 436); // Via naturaherstelling
   }
 
-  // 6. Bestuurder — labels lopen tot ~x=393
-  if (p.bestuurderNaam) draw(p.bestuurderNaam, 400, 619);
-  // 7. Geboortedatum bestuurder — label loopt tot ~x=373
-  if (p.bestuurderGeboortedatum) draw(p.bestuurderGeboortedatum, 380, 649);
+  // 5. Bestuurder naam
+  if (p.bestuurderNaam) draw(p.bestuurderNaam, 400, 469);
+  // 6. Geboortedatum bestuurder
+  if (p.bestuurderGeboortedatum) draw(p.bestuurderGeboortedatum, 400, 499);
 
-  // Handtekening — box in template (gemeten): x≈310, y_top≈713, w≈220, h≈50
+  // Handtekening — box rect: x=299.4, top=570.4, w=165.1, h=84.1
   if (!p.handtekening || !/^data:image\//i.test(p.handtekening)) {
     throw new Error("Handtekening ontbreekt of ongeldig formaat");
   }
@@ -142,7 +116,6 @@ export async function generateAttestPdf(p: AttestPayload): Promise<Uint8Array> {
       ? await pdf.embedJpg(sigBytes)
       : await pdf.embedPng(sigBytes);
   } catch {
-    // Fallback: probeer het andere formaat
     try {
       sigImg = await pdf.embedPng(sigBytes);
     } catch {
@@ -150,99 +123,17 @@ export async function generateAttestPdf(p: AttestPayload): Promise<Uint8Array> {
     }
   }
 
-  const boxX = 312;
-  const boxYFromTop = 713;
-  const boxW = 160;
-  const boxH = 50;
-  const scaled = sigImg.scaleToFit(boxW - 8, boxH - 8);
+  const boxX = 299.4;
+  const boxTop = 570.4;
+  const boxW = 165.1;
+  const boxH = 84.1;
+  const scaled = sigImg.scaleToFit(boxW - 10, boxH - 10);
   page.drawImage(sigImg, {
     x: boxX + (boxW - scaled.width) / 2,
-    y: height - boxYFromTop - boxH + (boxH - scaled.height) / 2,
+    y: height - boxTop - boxH + (boxH - scaled.height) / 2,
     width: scaled.width,
     height: scaled.height,
   });
-
-  // ---- Extra pagina: overige gegevens netjes onder titels ----
-  const page2 = pdf.addPage([width, height]);
-  let y = height - 60;
-
-  const heading = (t: string) => {
-    y -= 6;
-    page2.drawText(t, {
-      x: 50,
-      y,
-      size: 14,
-      font: fontBold,
-      color: rgb(0.15, 0.2, 0.25),
-    });
-    y -= 6;
-    page2.drawLine({
-      start: { x: 50, y: y },
-      end: { x: width - 50, y: y },
-      thickness: 0.7,
-      color: rgb(0.6, 0.7, 0.35),
-    });
-    y -= 20;
-  };
-  const row = (label: string, value: string) => {
-    if (y < 60) {
-      const np = pdf.addPage([width, height]);
-      // Bump reference (simple: don't overflow expected)
-      y = height - 60;
-      np.drawText(label + ":", { x: 50, y, size: 10, font: fontBold, color: black });
-      np.drawText(value || "—", { x: 200, y, size: 10, font, color: black });
-      y -= 18;
-      return;
-    }
-    page2.drawText(label + ":", { x: 50, y, size: 10, font: fontBold, color: black });
-    page2.drawText(value || "—", { x: 200, y, size: 10, font, color: black });
-    y -= 18;
-  };
-
-  page2.drawText("SCHADEMELDING — bijkomende gegevens", {
-    x: 50,
-    y: y,
-    size: 16,
-    font: fontBold,
-    color: rgb(0.15, 0.2, 0.25),
-  });
-  y -= 30;
-  if (p.code) {
-    page2.drawText(`Dossiercode: ${p.code}`, {
-      x: 50, y, size: 10, font, color: rgb(0.4, 0.4, 0.4),
-    });
-    y -= 20;
-  }
-
-  heading("Uw gegevens");
-  row("Naam", p.naam);
-  row("E-mail", p.email);
-  row("Telefoon", p.telefoon);
-
-  heading("Schade");
-  const ts = LABEL[p.typeSchade] ?? p.typeSchade;
-  row("Type schade", ts);
-  if (p.typeSchadeAndere) row("Omschrijving", p.typeSchadeAndere);
-  row("Datum schade", p.datumSchade);
-  if (p.bestuurderNaam) row("Bestuurder", p.bestuurderNaam);
-  if (p.bestuurderGeboortedatum)
-    row("Geboortedatum bestuurder", p.bestuurderGeboortedatum);
-
-  heading("BTW & betaling");
-  row("BTW-plichtig", p.btwPlichtig || "—");
-  row(
-    "BTW recuperatie",
-    p.btwRecuperatie
-      ? p.btwRecuperatie +
-        (p.btwPercentage != null ? ` (${p.btwPercentage}%)` : "")
-      : "—",
-  );
-  row("IBAN", p.iban);
-  row("Betaalwijze", p.betaalwijze);
-
-  heading("Verklaringen");
-  row("Gegevens naar waarheid", p.akkoordJuistheid ? "Akkoord" : "Niet akkoord");
-  row("Verwerking gegevens (GDPR)", p.akkoordGdpr ? "Akkoord" : "Niet akkoord");
 
   return await pdf.save();
 }
