@@ -540,7 +540,7 @@ const SignaturePad = forwardRef<SignaturePadHandle>((_props, ref) => {
         canvas.height = rect.height * ratio;
         const ctx = canvas.getContext("2d")!;
         ctx.scale(ratio, ratio);
-        ctx.lineWidth = 2;
+        ctx.lineWidth = 3.2;
         ctx.lineCap = "round";
         ctx.lineJoin = "round";
         ctx.strokeStyle = "#2b2724";
